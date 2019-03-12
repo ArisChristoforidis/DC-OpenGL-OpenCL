@@ -1,0 +1,39 @@
+#ifndef DUALCONTOUR_H
+#define DUALCONTOUR_H
+
+#include <vector>
+#include <iostream>
+#include <cstdint>
+
+#include <glm/glm.hpp>
+
+#include "TreeNode.h"
+#include "Mesh.h"
+#include "Qef.h"
+
+
+#define MIN -3
+#define MAX 3
+#define THRESHOLD 0
+#define STEP 0.1
+
+
+class DualContour {
+public:
+	DualContour();
+	~DualContour();
+
+	Mesh ExtractSurface(float (*function)(float, float, float));
+private:
+
+
+	glm::dvec3 FindBestVertex(double(*function)(double, double, double), double x, double y, double z);
+	float Adapt(float v0Val, float v1Val);
+	glm::fvec3 CalculateNormal(float(*function)(float, float, float), glm::fvec3 pos, float d = 0.01f);
+	glm::fvec3 ApproximateZeroCrossingPos();
+
+};
+
+
+
+#endif
