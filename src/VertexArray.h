@@ -1,6 +1,8 @@
 #ifndef VERTEXARRAY_H
 #define VERTEXARRAY_H
 
+#include <iostream>
+
 #include<glad/glad.h>
 
 #include "VertexBuffer.h"

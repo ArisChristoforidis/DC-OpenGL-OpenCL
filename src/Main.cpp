@@ -127,8 +127,23 @@ int main() {
 
 
 	DualContour dualContour;
-	dualContour.ExtractSurface(CircleFunction);
+	Mesh mesh = dualContour.ExtractSurface(CircleFunction);
 
+	VertexBuffer vertexBuffer(&dualContour.vertArray[0], dualContour.vertArray.size() * sizeof(float));
+
+	VertexBufferLayout bufferLayout;
+	bufferLayout.Push<float>(3, true);
+
+	VertexArray vertexArray;
+	vertexArray.AddBuffer(vertexBuffer, bufferLayout);
+
+	IndexBuffer indexBuffer(&dualContour.indices[0], dualContour.indices.size());
+
+	std::cout << dualContour.indices.size() << std::endl;
+	std::cout << dualContour.vertArray.size() << std::endl;
+
+
+	/*
 	srand(time(NULL));
 	float randomNumber = rand() % (2 ^ 10) + 1;
 	
@@ -170,21 +185,8 @@ int main() {
 			indices[ti + 5] = vi + SIZE + 2;
 		}
 	}
-	/*
-	for (int i = 0; i < SIZE*SIZE; i++) {
-		indices[i] = i + 5 + i/SIZE;
-		indices[i + 1] = i + 1 + i / SIZE;
-		indices[i + 2] = i + 4 + i / SIZE;
-		std::cout << "[" << indices[i] << "," << indices[i + 1] << "," << indices[i + 2] << "]" << std::endl;
 
-		indices[i + 3] = i + 1 + i / SIZE;
-		indices[i + 4] = i + i / SIZE;
-		indices[i + 5] =i + 4 + i / SIZE;
-		std::cout << "[" << indices[i + 3] << "," << indices[i + 4] << "," << indices[i + 5] << "]" << std::endl;
-		std::cout << "Cell " << i << " done." << std::endl;
-	}
-	std::cout << "Indices done.\n";
-	*/
+
 	VertexArray  vertexArray;
 	//Changed 4 to 3.
 	VertexBuffer vertexBuffer(vertices, 3 * (SIZE + 1)*(SIZE + 1) * sizeof(float));
@@ -193,11 +195,13 @@ int main() {
 	vertexArray.AddBuffer(vertexBuffer, bufferLayout);
 
 	IndexBuffer	 indexBuffer(indices, SIZE*SIZE*3*2);
+	*/
+
 	Shader customShader("src/shaders/vshader.vs", "src/shaders/fshader.fs");
 
 	//Going 3D.
 	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::scale(model, glm::vec3(10.0f));
+	//model = glm::scale(model, glm::vec3(10.0f));
 
 	//First parameter is essentially the FOV.
 	glm::mat4 projection = glm::mat4(1.0f);
@@ -372,5 +376,5 @@ void ShowGUIWindow() {
 }
 
 float CircleFunction(float x, float y, float z) {
-	return 2.5f - sqrt(x*x + y * y + z * z);
+	return 1.0f - sqrt(x * x + y * y + z * z);
 }

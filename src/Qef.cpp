@@ -10,10 +10,9 @@ Qef::~Qef() {
 
 glm::fvec3 Qef::Solve(glm::fvec3 pos,std::vector<glm::fvec3> positions, std::vector<glm::fvec3> normals) {
 
-	const unsigned int rows = positions.size();
-	std::cout << "Attempting to create matrix with " << rows << " rows." << std::endl;
+	const unsigned int rows = normals.size() + 3;
 	//Get the average of positions to find the point towards which we "pull".
-	glm::fvec3 avgPoint = GetAverage(positions,rows);
+	glm::fvec3 avgPoint = GetAverage(positions,rows-3);
 
 	normals.push_back(glm::fvec3(BIAS_STRENGTH,0,0));
 	positions.push_back(avgPoint);
@@ -24,6 +23,14 @@ glm::fvec3 Qef::Solve(glm::fvec3 pos,std::vector<glm::fvec3> positions, std::vec
 	normals.push_back(glm::fvec3(0 , 0, BIAS_STRENGTH));
 	positions.push_back(avgPoint);
 
+	/*
+	std::cout << "[";
+	for (int i = 0; i < rows; i++) {
+		std::cout << positions[i].x << " " << positions[i].y << " " << positions[i].z << std::endl;
+	}
+	std::cout << "]";
+	*/
+
 	//Initialize our A matrix.
 	MatrixType ublas_A(rows, 3);
 	//Initialize our b vector.
@@ -32,16 +39,13 @@ glm::fvec3 Qef::Solve(glm::fvec3 pos,std::vector<glm::fvec3> positions, std::vec
 	//Fill A and b with data.
 	for(int i=0;i<rows;i++){
 		//Assign data to A.(No need to have a nested for-loop here obviously)
-		ublas_A(i, 0) = positions[i].x;
-		ublas_A(i, 1) = positions[i].y;
-		ublas_A(i, 2) = positions[i].z;
+		ublas_A(i, 0) = normals[i].x;
+		ublas_A(i, 1) = normals[i].y;
+		ublas_A(i, 2) = normals[i].z;
 
 		//Assign data to b.
 		ublas_b(i) = positions[i].x * normals[i].x + positions[i].y * normals[i].y + positions[i].z * normals[i].z;
 	}
-
-	std::cout << ublas_A << std::endl;
-	std::cout << ublas_b << std::endl;
 
 	//Create device matrix and vector for A and b.This will probably be removed down the line because this whole part will be run on the device.
 	VCLMatrixType vcl_A(ublas_A.size1(), ublas_A.size2());
@@ -60,8 +64,9 @@ glm::fvec3 Qef::Solve(glm::fvec3 pos,std::vector<glm::fvec3> positions, std::vec
 	viennacl::linalg::inplace_solve(vcl_R, vcl_b2, viennacl::linalg::upper_tag());
 
 	//std::cout << "Result: " << vcl_b2 << std::endl;
-	std::cout << "[" << pos.x << "," << pos.y << "," << pos.z << "] : " << vcl_b2[0] << " " << vcl_b2[1] << " " << vcl_b2[2] << std::endl;
+	//std::cout << "[" << pos.x << "," << pos.y << "," << pos.z << "] : " << vcl_b2[0] << " " << vcl_b2[1] << " " << vcl_b2[2] << std::endl;
 	glm::fvec3 result(vcl_b2[0], vcl_b2[1], vcl_b2[0]);
+	//std::cout << result.x << "," << result.y << "," << result.z << std::endl;
 	return result;
 }
 
