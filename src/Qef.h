@@ -2,6 +2,7 @@
 #define QEF_H
 
 //Activate ublas support for ViennaCL
+#define VIENNACL_WITH_OPENMP
 #define VIENNACL_WITH_UBLAS
 
 //Boost headers.
@@ -26,6 +27,7 @@
 
 #include <vector>
 #include <iostream>
+#include <chrono>
 
 #define STEP 0.1 //TODO:Remove at some point, this is very temp,already defined in DualContour.h
 #define BIAS_STRENGTH 0.01
@@ -37,6 +39,7 @@ public:
 	static glm::fvec3 Solve(glm::fvec3 pos, std::vector<glm::fvec3> positions, std::vector<glm::fvec3> normals);
 
 private:
+
 
 	typedef float ScalarType;
 	typedef boost::numeric::ublas::matrix<ScalarType> MatrixType;

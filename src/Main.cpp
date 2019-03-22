@@ -38,6 +38,7 @@ void CalculateDeltaTime();
 void InitializeImGui(GLFWwindow* window);
 void ShowGUIWindow();
 float CircleFunction(float x, float y, float z);
+float TorusFunction(float x, float y, float z);
 
 //Window size.
 #define WINDOW_WIDTH 1920
@@ -49,11 +50,16 @@ bool isWireframeEnabled = false;
 
 int lastKeyState = GLFW_RELEASE;
 float deltaTime = 0.0f;
-float lastFrame = 0.0f;
+double lastFrame = 0.0f;
 bool hasMouseMoved = false;
 float lastX = WINDOW_WIDTH / 2.0f;
 float lastY = WINDOW_HEIGHT / 2.0f;
 Camera camera;
+
+//GUI window variables.
+unsigned int indiceCount;
+unsigned int vertexCount;
+
 
 int main() {
 	
@@ -138,10 +144,8 @@ int main() {
 	vertexArray.AddBuffer(vertexBuffer, bufferLayout);
 
 	IndexBuffer indexBuffer(&dualContour.indices[0], dualContour.indices.size());
-
-	std::cout << dualContour.indices.size() << std::endl;
-	std::cout << dualContour.vertArray.size() << std::endl;
-
+	indiceCount = dualContour.indices.size();
+	vertexCount = dualContour.vertArray.size();
 
 	/*
 	srand(time(NULL));
@@ -217,7 +221,6 @@ int main() {
 	InitializeImGui(window);
 
 	while (!glfwWindowShouldClose(window)) {
-
 		CalculateDeltaTime();
 		
 		//Input.
@@ -228,7 +231,6 @@ int main() {
 		glm::mat4 view = camera.GetViewMatrix();
 		customShader.setMat4("view", view);
 		customShader.setMat4("projection", projection);
-
 		//Render a mesh.
 		renderer.Draw(vertexArray, indexBuffer, customShader);
 		//Show GUI.
@@ -264,8 +266,8 @@ void MouseCallback(GLFWwindow * window, double xPos, double yPos) {
 		lastY = yPos;
 	}
 
-	float xOffset = xPos - lastX;
-	float yOffset = lastY - yPos;
+	float xOffset = (float)(xPos - lastX);
+	float yOffset = (float)(lastY - yPos);
 
 	lastX = xPos;
 	lastY = yPos;
@@ -309,7 +311,7 @@ void ToggleWireframeMode() {
 
 //Calculates the time it took to process the last frame.
 void CalculateDeltaTime() {
-	float currentFrame = glfwGetTime();
+	double currentFrame = glfwGetTime();
 	deltaTime = currentFrame - lastFrame;
 	lastFrame = currentFrame;
 }
@@ -367,6 +369,9 @@ void ShowGUIWindow() {
 	bool show = true;
 	ImGui::Begin("Stats", &show); {
 		ImGui::Text("Framerate: %.3f (%.4f sec)", 1 / deltaTime, deltaTime);
+		ImGui::Text("Vertices: %d", vertexCount);
+		ImGui::Text("Triangles: %d", indiceCount);
+
 	}
 	ImGui::End();
 
@@ -376,5 +381,11 @@ void ShowGUIWindow() {
 }
 
 float CircleFunction(float x, float y, float z) {
-	return 1.0f - sqrt(x * x + y * y + z * z);
+	return 15.0f - sqrt(x * x + y * y + z * z);
+}
+
+float TorusFunction(float x,float y,float z){
+	const float R = 64.0f;
+	const float r = R / 2;
+	return pow(sqrt(x*x + y * y) - R, 2) + z * z - r;
 }

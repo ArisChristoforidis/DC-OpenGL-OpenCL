@@ -31,6 +31,9 @@ glm::fvec3 Qef::Solve(glm::fvec3 pos,std::vector<glm::fvec3> positions, std::vec
 	std::cout << "]";
 	*/
 
+	//auto start = std::chrono::high_resolution_clock::now();
+
+
 	//Initialize our A matrix.
 	MatrixType ublas_A(rows, 3);
 	//Initialize our b vector.
@@ -63,9 +66,16 @@ glm::fvec3 Qef::Solve(glm::fvec3 pos,std::vector<glm::fvec3> positions, std::vec
 	viennacl::vector_range<VCLVectorType> vcl_b2(vcl_b, vcl_range);
 	viennacl::linalg::inplace_solve(vcl_R, vcl_b2, viennacl::linalg::upper_tag());
 
+	/*
+	auto end = std::chrono::high_resolution_clock::now();
+	auto dur = end - start;
+	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+	
+	std::cout << "Finished least squares in " << ms << " milliseconds \n";
+	*/
 	//std::cout << "Result: " << vcl_b2 << std::endl;
 	//std::cout << "[" << pos.x << "," << pos.y << "," << pos.z << "] : " << vcl_b2[0] << " " << vcl_b2[1] << " " << vcl_b2[2] << std::endl;
-	glm::fvec3 result(vcl_b2[0], vcl_b2[1], vcl_b2[0]);
+	glm::fvec3 result(vcl_b2[0], vcl_b2[1], vcl_b2[2]);
 	//std::cout << result.x << "," << result.y << "," << result.z << std::endl;
 	return result;
 }

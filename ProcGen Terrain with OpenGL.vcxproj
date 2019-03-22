@@ -82,6 +82,7 @@
       <AdditionalOptions>
       </AdditionalOptions>
       <AdditionalIncludeDirectories>C:\Program Files %28x86%29\AMD APP SDK\3.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <AdditionalDependencies>E:\OPENGL_GLFW\Link from here\Libs\glfw3.lib;opengl32.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>

@@ -11,6 +11,7 @@ DualContour::~DualContour() {
 Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 	//TODO:Octree should be created here.
 
+
 	const float halfStep = STEP / 2.0;
 	const glm::fvec3 cornerOffset[8] = {
 		glm::fvec3(0,0,0),
@@ -31,7 +32,10 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 	};
 
 	const int size = MAX - MIN;
-	TreeNode nodeArray[size][size][size];
+	//TreeNode nodeArray[size][size][size];
+	TreeNode* nodeArray =(TreeNode*)malloc(size*size*size * sizeof(TreeNode));
+
+	auto start = std::chrono::high_resolution_clock::now();
 
 	unsigned int index = 0;
 	for (int x = MIN; x < MAX; x++) {
@@ -57,7 +61,6 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 
 				if(cornerHasSurface == 0 || cornerHasSurface == 255){
 					//Delete the node because it is either fully outside the function or fully inside it.
-					nodeArray[x - MIN][y - MIN][z - MIN].cubeValid = false;
 					continue;
 				}
 
@@ -100,54 +103,57 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 
 				//Solve QEF.
 				glm::fvec3 pos = Qef::Solve(glm::fvec3(x, y, z), edgeList, edgeNormals);
-				nodeArray[x - MIN][y - MIN][z - MIN].pos = pos;
-				std::cout << "Pos : [" << pos.x << "," << pos.y << "," << pos.z << "]\n";
-				//Assign index to vertex.
-				nodeArray[x - MIN][y - MIN][z - MIN].index = index++;
 
-				//Mark which of the 3 (important) edges have a sign change.
+
+
+
+				//nodeArray[x - MIN][y - MIN][z - MIN].pos = pos;
+				
+				//std::cout << "Pos : [" << pos.x << "," << pos.y << "," << pos.z << "]\n";
+				//Assign index to vertex.
+				//nodeArray[x - MIN][y - MIN][z - MIN].index = index++;
+				nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].index = index++;
+				/*Mark which of the 3 (important) edges have a sign change.
 				int edge37 = ((cornerHasSurface >> 3) & 1) != ((cornerHasSurface >> 7) & 1) ? 1 : 0;
 				nodeArray[x - MIN][y - MIN][z - MIN].edgeHasSignChange |= (edge37 << 0);
 				int edge57 = ((cornerHasSurface >> 5) & 1) != ((cornerHasSurface >> 7) & 1) ? 1 : 0;
 				nodeArray[x - MIN][y - MIN][z - MIN].edgeHasSignChange |= (edge37 << 1);
 				int edge67 = ((cornerHasSurface >> 6) & 1) != ((cornerHasSurface >> 7) & 1) ? 1 : 0;
 				nodeArray[x - MIN][y - MIN][z - MIN].edgeHasSignChange |= (edge37 << 2);
-
-				if(nodeArray[x - MIN][y - MIN][z - MIN].edgeHasSignChange == 0){
-					std::cout << "Is 0\n";
-				}else{
-					std::cout << "Is " << unsigned(nodeArray[x - MIN][y - MIN][z - MIN].edgeHasSignChange) << std::endl;
-				}
-
+				*/
+			
 				//Push the coords to the vertex vector(will be converted to array later).
 				glm::fvec3 normPos = Normalize(pos);
 				vertArray.push_back(normPos.x);
 				vertArray.push_back(normPos.y);
 				vertArray.push_back(normPos.z);
 				
-				std::cout <<"[" << x-MIN << "," << y - MIN << "," << z-MIN << "] : " << "Pushed " << normPos.x << "," << normPos.y << "," << normPos.z << " to the vertArray.\n";
+				//std::cout <<"[" << x-MIN << "," << y - MIN << "," << z-MIN << "] : " << "Pushed " << normPos.x << "," << normPos.y << "," << normPos.z << " to the vertArray.\n";
 				
 			}
 		}
 	}
-	
-	for (int x = MIN; x < MAX-1; x++) {
-		for (int y = MIN; y < MAX-1; y++) {
-			for (int z = MIN; z < MAX-1; z++) {
+
+	//std::cout << "Linear Algebra took " << Qef::timeElapsed << " ms" << std::endl;
+
+	auto part1End = std::chrono::high_resolution_clock::now();
+	auto dur = part1End - start;
+	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+	std::cout << "Finished the first part in " << ms << "seconds\n";
+
+	for (int x = MIN; x < MAX; x++) {
+		for (int y = MIN; y < MAX; y++) {
+			for (int z = MIN; z < MAX; z++) {
 				bool solid1 = function(x+1, y+1, z) > 0;
 				bool solid2 = function(x + 1, y + 1, z + 1) > 0;
 				if(solid1 != solid2){
 					//TODO:Build triangles.
 
-					unsigned int x0y0 = nodeArray[x - MIN][y - MIN][z - MIN].index;
-					unsigned int x0y1 = nodeArray[x - MIN][y - MIN + 1][z - MIN].index;
-					unsigned int x1y0 = nodeArray[x - MIN + 1][y - MIN][z - MIN].index;
-					unsigned int x1y1 = nodeArray[x - MIN + 1][y - MIN + 1][z - MIN].index;
+					unsigned int x0y0 = nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].index;
+					unsigned int x0y1 = nodeArray[(x - MIN) + size * ((y - MIN + 1) + size * (z - MIN))].index;
+					unsigned int x1y0 = nodeArray[(x - MIN + 1) + size * ((y - MIN) + size * (z - MIN))].index;
+					unsigned int x1y1 = nodeArray[(x - MIN + 1) + size * ((y - MIN + 1) + size * (z - MIN))].index;
 
-					nodeArray[x - MIN][y - MIN][z - MIN].used = true;
-					nodeArray[x - MIN][y - MIN + 1][z - MIN].used = true;
-					nodeArray[x - MIN + 1][y - MIN][z - MIN].used = true;
-					nodeArray[x - MIN + 1][y - MIN + 1][z - MIN].used = true;
 
 					indices.push_back(x1y1);
 					indices.push_back(x1y0);
@@ -162,16 +168,11 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 				solid2 = function(x + 1, y + 1, z + 1) > 0;
 				if(solid1 != solid2){
 
-					unsigned int x0z0 = nodeArray[x - MIN][y - MIN][z - MIN].index;
-					unsigned int x0z1 = nodeArray[x - MIN][y - MIN][z - MIN + 1].index;
-					unsigned int x1z0 = nodeArray[x - MIN + 1][y - MIN][z - MIN].index;
-					unsigned int x1z1 = nodeArray[x - MIN + 1][y - MIN ][z - MIN + 1].index;
+					unsigned int x0z0 = nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].index;
+					unsigned int x0z1 = nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN + 1))].index;
+					unsigned int x1z0 = nodeArray[(x - MIN + 1) + size * ((y - MIN) + size * (z - MIN))].index;
+					unsigned int x1z1 = nodeArray[(x - MIN + 1) + size * ((y - MIN) + size * (z - MIN + 1))].index;
 				
-					nodeArray[x - MIN][y - MIN][z - MIN].used = true;
-					nodeArray[x - MIN][y - MIN][z - MIN + 1].used = true;
-					nodeArray[x - MIN + 1][y - MIN][z - MIN].used = true;
-					nodeArray[x - MIN + 1][y - MIN][z - MIN + 1].used = true;
-
 					indices.push_back(x1z1);
 					indices.push_back(x1z0);
 					indices.push_back(x0z1);
@@ -185,15 +186,11 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 				solid2 = function(x + 1, y + 1, z + 1) > 0;
 				if (solid1 != solid2) {
 
-					unsigned int y0z0 = nodeArray[x - MIN][y - MIN][z - MIN].index;
-					unsigned int y0z1 = nodeArray[x - MIN][y - MIN][z - MIN + 1].index;
-					unsigned int y1z0 = nodeArray[x - MIN][y - MIN + 1][z - MIN].index;
-					unsigned int y1z1 = nodeArray[x - MIN][y - MIN + 1][z - MIN + 1].index;
+					unsigned int y0z0 = nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].index;
+					unsigned int y0z1 = nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN + 1))].index;
+					unsigned int y1z0 = nodeArray[(x - MIN) + size * ((y - MIN + 1) + size * (z - MIN))].index;
+					unsigned int y1z1 = nodeArray[(x - MIN) + size * ((y - MIN + 1) + size * (z - MIN + 1))].index;
 
-					nodeArray[x - MIN][y - MIN][z - MIN].used = true;
-					nodeArray[x - MIN][y - MIN][z - MIN + 1].used = true;
-					nodeArray[x - MIN][y - MIN + 1][z - MIN].used = true;
-					nodeArray[x - MIN][y - MIN + 1][z - MIN + 1].used = true;
 
 					indices.push_back(y1z1);
 					indices.push_back(y1z0);
@@ -209,17 +206,7 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 		}
 	}
 
-	for (int x = MIN; x < MAX - 1; x++) {
-		for (int y = MIN; y < MAX - 1; y++) {
-			for (int z = MIN; z < MAX - 1; z++) {
-				if(nodeArray[x - MIN][y - MIN][z - MIN].cubeValid && !nodeArray[x - MIN][y - MIN][z - MIN].used){
-					glm::fvec3 p = Normalize(nodeArray[x - MIN][y - MIN][z - MIN].pos);
-					std::cout << "Not used: "<< p.x << "," << p.y << "," << p.z << std::endl;
-				}
-			}
-		}
-	}
-
+	
 	std::cout << "Vertices\n";
 	for (int i = 0; i < vertArray.size(); i+= 3) {
 		std::cout << vertArray[i] << " " << vertArray[i+1] << " " <<  vertArray[i + 2] << "\n";
@@ -229,6 +216,13 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 	for (int i = 0; i < indices.size(); i+= 3) {
 		std::cout << indices[i] << " " << indices[i+1] << " " << indices[i+2] << "\n";
 	}
+	
+
+	auto end = std::chrono::high_resolution_clock::now();
+	dur = end - start;
+	ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+	std::cout << "Finished dual contouring in " << ms << "seconds\n";
+
 	VertexBuffer vertexBuffer(&vertArray[0],vertArray.size() * sizeof(float));
 	
 	VertexBufferLayout bufferLayout;
