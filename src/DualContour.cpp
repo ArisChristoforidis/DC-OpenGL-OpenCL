@@ -36,12 +36,10 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 	TreeNode* nodeArray =(TreeNode*)malloc(size*size*size * sizeof(TreeNode));
 
 	auto start = std::chrono::high_resolution_clock::now();
-
 	unsigned int index = 0;
 	for (int x = MIN; x < MAX; x++) {
 		for (int y = MIN; y < MAX; y++) {
 			for (int z = MIN; z < MAX; z++) {
-
 				/*
 				The variable cornerSum is an 8 bit unsigned int(takes values on the range [0,255]).We use this
 				in the place of a bool array in order to determine whether a corner of a cube has a value or not 
@@ -49,20 +47,26 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 				*/
 				uint8_t cornerHasSurface = 0;
 				float cornerDensity[8];
+				//std::cout << "[" << x << "," << y << "," << z << "]" << std::endl;
+
 				for(int i=0;i<8;i++){
 					glm::fvec3 cornerPosition = glm::fvec3(x, y, z) + cornerOffset[i];
 					cornerDensity[i] = function(cornerPosition.x,cornerPosition.y,cornerPosition.z);
 
 					//If the density is below the threshold, the corner is outside the shape.
-					int hasSurface = cornerDensity[i] < THRESHOLD ? 0 : 1;
+					int hasSurface = cornerDensity[i] > THRESHOLD ? 1 : 0;
 					cornerHasSurface |= (hasSurface << i);
+					//std::cout << "[" << cornerOffset[i].x << "," << cornerOffset[i].y << "," << cornerOffset[i].z << "]:" << cornerDensity[i] << std::endl;
 				}
+				//std::cout << "--------------------" << std::endl;
 
-
+				
 				if(cornerHasSurface == 0 || cornerHasSurface == 255){
 					//Delete the node because it is either fully outside the function or fully inside it.
+					//std::cout << "Index " << (index - 1) << " :rejected."
 					continue;
 				}
+				
 
 				std::vector<glm::fvec3> edgeList;
 				for (unsigned int i = 0; i < 12; i++) {
@@ -93,6 +97,10 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 					}
 				}
 
+				if(edgeList.size() <= 1){
+					continue;
+				}
+
 				//Calculate edge normal and add it to a list.
 				std::vector<glm::fvec3> edgeNormals;
 				for(unsigned int i=0;i<edgeList.size();i++){
@@ -112,7 +120,10 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 				//std::cout << "Pos : [" << pos.x << "," << pos.y << "," << pos.z << "]\n";
 				//Assign index to vertex.
 				//nodeArray[x - MIN][y - MIN][z - MIN].index = index++;
-				nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].index = index++;
+				nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].index = index;
+				nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].used = false;
+				//std::cout << "Set index for element " << (x - MIN) + size * ((y - MIN) + size * (z - MIN)) << " to " << index << std::endl;
+				index += 1;
 				/*Mark which of the 3 (important) edges have a sign change.
 				int edge37 = ((cornerHasSurface >> 3) & 1) != ((cornerHasSurface >> 7) & 1) ? 1 : 0;
 				nodeArray[x - MIN][y - MIN][z - MIN].edgeHasSignChange |= (edge37 << 0);
@@ -139,13 +150,188 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 	auto part1End = std::chrono::high_resolution_clock::now();
 	auto dur = part1End - start;
 	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
-	std::cout << "Finished the first part in " << ms << "seconds\n";
+	std::cout << "Finished the first part in " << ms << " ms\n";
 
+	int usedIndices = 0;
+
+	for (int x = MIN; x < MAX; x++) {
+		for (int y = MIN; y < MAX; y++) {
+			for (int z = MIN; z < MAX; z++) {
+
+				if(x > MIN && y > MIN){
+					bool solid1 = function(x, y, z) > THRESHOLD;
+					bool solid2 = function(x, y, z + 1) > THRESHOLD;
+					if(solid1 != solid2){
+						unsigned int x0y0 = nodeArray[(x - MIN - 1) + size * ((y - MIN - 1) + size * (z - MIN))].index;
+						unsigned int x0y1 = nodeArray[(x - MIN - 1) + size * ((y - MIN) + size * (z - MIN))].index;
+						unsigned int x1y0 = nodeArray[(x - MIN) + size * ((y - MIN - 1) + size * (z - MIN))].index;
+						unsigned int x1y1 = nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].index;
+
+						if (nodeArray[(x - MIN - 1) + size * ((y - MIN - 1) + size * (z - MIN))].used == false) {
+							nodeArray[(x - MIN - 1) + size * ((y - MIN - 1) + size * (z - MIN))].used = true;
+							usedIndices += 1;
+						}
+
+						if(nodeArray[(x - MIN - 1) + size * ((y - MIN) + size * (z - MIN))].used == false){
+							nodeArray[(x - MIN - 1) + size * ((y - MIN) + size * (z - MIN))].used = true;
+							usedIndices += 1;
+						}
+
+						if (nodeArray[(x - MIN) + size * ((y - MIN - 1) + size * (z - MIN))].used == false) {
+							nodeArray[(x - MIN) + size * ((y - MIN - 1) + size * (z - MIN))].used = true;
+							usedIndices += 1;
+						}
+
+						if(nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].used == false){
+							nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].used = true;
+							usedIndices += 1;
+						}
+
+						if (solid2) {
+							//Flip.
+							indices.push_back(x0y0);
+							indices.push_back(x1y1);
+							indices.push_back(x0y1);
+
+							indices.push_back(x0y0);
+							indices.push_back(x1y0);
+							indices.push_back(x1y1);
+
+
+						} else {
+							indices.push_back(x0y0);
+							indices.push_back(x0y1);
+							indices.push_back(x1y1);
+
+							indices.push_back(x0y0);
+							indices.push_back(x1y1);
+							indices.push_back(x1y0);
+
+						}
+					}
+				}
+
+				if (x > MIN && z > MIN) {
+					bool solid1 = function(x, y, z) > THRESHOLD;
+					bool solid2 = function(x, y + 1,z) > THRESHOLD;
+					if(solid1!=solid2){
+						unsigned int x0z0 = nodeArray[(x - MIN - 1) + size * ((y - MIN) + size * (z - MIN - 1))].index;
+						unsigned int x0z1 = nodeArray[(x - MIN - 1) + size * ((y - MIN) + size * (z - MIN))].index;
+						unsigned int x1z0 = nodeArray[(x - MIN) + size * ((y - MIN ) + size * (z - MIN - 1))].index;
+						unsigned int x1z1 = nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].index;
+
+						if(nodeArray[(x - MIN - 1) + size * ((y - MIN) + size * (z - MIN - 1))].used == false){
+							nodeArray[(x - MIN - 1) + size * ((y - MIN) + size * (z - MIN - 1))].used = true;
+							usedIndices += 1;
+						}
+
+						if(nodeArray[(x - MIN - 1) + size * ((y - MIN) + size * (z - MIN))].used == false){
+							nodeArray[(x - MIN - 1) + size * ((y - MIN) + size * (z - MIN))].used = true;
+							usedIndices += 1;
+						}
+
+						if (nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN - 1))].used == false) {
+							nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN - 1))].used = true;
+							usedIndices += 1;
+						}
+
+						if(nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].used == false){
+							nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].used = true;
+							usedIndices += 1;
+						}
+
+
+						if (solid1) {
+							//Flip.
+							indices.push_back(x0z0);
+							indices.push_back(x1z1);
+							indices.push_back(x0z1);
+
+							indices.push_back(x0z0);
+							indices.push_back(x1z0);
+							indices.push_back(x1z1);
+
+
+						} else {
+							indices.push_back(x0z0);
+							indices.push_back(x0z1);
+							indices.push_back(x1z1);
+
+							indices.push_back(x0z0);
+							indices.push_back(x1z1);
+							indices.push_back(x1z0);
+
+						}
+					}
+				}
+
+				if(y>MIN && z>MIN){
+					bool solid1 = function(x, y, z) > THRESHOLD;
+					bool solid2 = function(x + 1, y, z) > THRESHOLD;
+					if(solid1 != solid2){
+						unsigned int y0z0 = nodeArray[(x - MIN) + size * ((y - MIN - 1) + size * (z - MIN - 1))].index;
+						unsigned int y0z1 = nodeArray[(x - MIN) + size * ((y - MIN - 1) + size * (z - MIN))].index;
+						unsigned int y1z0 = nodeArray[(x - MIN) + size * ((y - MIN ) + size * (z - MIN - 1))].index;
+						unsigned int y1z1 = nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].index;
+
+						if(nodeArray[(x - MIN) + size * ((y - MIN - 1) + size * (z - MIN - 1))].used == false){
+							nodeArray[(x - MIN) + size * ((y - MIN - 1) + size * (z - MIN - 1))].used = true;
+							usedIndices += 1;
+						}
+
+						if(nodeArray[(x - MIN) + size * ((y - MIN - 1) + size * (z - MIN))].used == false){
+							nodeArray[(x - MIN) + size * ((y - MIN - 1) + size * (z - MIN))].used = true;
+							usedIndices += 1;
+						}
+
+						if(nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN - 1))].used == false){
+							nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN - 1))].used = true;
+							usedIndices += 1;
+						}
+
+						if(nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].used == false){
+							nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].used = true;
+							usedIndices += 1;
+						}
+
+
+						if (solid2) {
+							//Flip.
+							indices.push_back(y0z0);
+							indices.push_back(y1z1);
+							indices.push_back(y0z1);
+
+							indices.push_back(y0z0);
+							indices.push_back(y1z0);
+							indices.push_back(y1z1);
+
+
+						} else {
+							indices.push_back(y0z0);
+							indices.push_back(y0z1);
+							indices.push_back(y1z1);
+
+							indices.push_back(y0z0);
+							indices.push_back(y1z1);
+							indices.push_back(y1z0);
+
+						}
+
+					}
+				}
+			}
+
+
+		}
+	}
+
+	/*
 	for (int x = MIN; x < MAX; x++) {
 		for (int y = MIN; y < MAX; y++) {
 			for (int z = MIN; z < MAX; z++) {
 				bool solid1 = function(x+1, y+1, z) > 0;
 				bool solid2 = function(x + 1, y + 1, z + 1) > 0;
+				//std::cout << "Testing [" << x + 1 << "," << y + 1 << "," << z << "] =?= [" << x + 1 << "," << y + 1 << "," << z + 1 << "]\n";
 				if(solid1 != solid2){
 					//TODO:Build triangles.
 
@@ -154,74 +340,131 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 					unsigned int x1y0 = nodeArray[(x - MIN + 1) + size * ((y - MIN) + size * (z - MIN))].index;
 					unsigned int x1y1 = nodeArray[(x - MIN + 1) + size * ((y - MIN + 1) + size * (z - MIN))].index;
 
+					if(solid2){
+						//Flip.
+						indices.push_back(x0y0);
+						indices.push_back(x1y1);
+						indices.push_back(x0y1);
 
-					indices.push_back(x1y1);
-					indices.push_back(x1y0);
-					indices.push_back(x0y1);
+						indices.push_back(x0y0);
+						indices.push_back(x1y0);
+						indices.push_back(x1y1);
 
-					indices.push_back(x1y0);
-					indices.push_back(x0y0);
-					indices.push_back(x0y1);
+
+					}else{
+						indices.push_back(x0y0);
+						indices.push_back(x0y1);
+						indices.push_back(x1y1);
+
+						indices.push_back(x0y0);
+						indices.push_back(x1y1);
+						indices.push_back(x1y0);
+
+					}
+					
 
 				}
 				solid1 = function(x + 1, y, z+1) > 0;
-				solid2 = function(x + 1, y + 1, z + 1) > 0;
 				if(solid1 != solid2){
 
 					unsigned int x0z0 = nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].index;
 					unsigned int x0z1 = nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN + 1))].index;
 					unsigned int x1z0 = nodeArray[(x - MIN + 1) + size * ((y - MIN) + size * (z - MIN))].index;
 					unsigned int x1z1 = nodeArray[(x - MIN + 1) + size * ((y - MIN) + size * (z - MIN + 1))].index;
-				
-					indices.push_back(x1z1);
-					indices.push_back(x1z0);
-					indices.push_back(x0z1);
+					
 
-					indices.push_back(x1z0);
-					indices.push_back(x0z0);
-					indices.push_back(x0z1);
+					if (solid1) {
+						//Flip.
+						indices.push_back(x0z0);
+						indices.push_back(x1z1);
+						indices.push_back(x0z1);
+
+						indices.push_back(x0z0);
+						indices.push_back(x1z0);
+						indices.push_back(x1z1);
+
+
+					} else {
+						indices.push_back(x0z0);
+						indices.push_back(x0z1);
+						indices.push_back(x1z1);
+
+						indices.push_back(x0z0);
+						indices.push_back(x1z1);
+						indices.push_back(x1z0);
+
+					}
+
+				
 
 				}
 				solid1 = function(x, y + 1, z + 1) > 0;
-				solid2 = function(x + 1, y + 1, z + 1) > 0;
 				if (solid1 != solid2) {
-
 					unsigned int y0z0 = nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN))].index;
 					unsigned int y0z1 = nodeArray[(x - MIN) + size * ((y - MIN) + size * (z - MIN + 1))].index;
 					unsigned int y1z0 = nodeArray[(x - MIN) + size * ((y - MIN + 1) + size * (z - MIN))].index;
 					unsigned int y1z1 = nodeArray[(x - MIN) + size * ((y - MIN + 1) + size * (z - MIN + 1))].index;
 
+					if (solid2) {
+						//Flip.
+						indices.push_back(y0z0);
+						indices.push_back(y1z1);
+						indices.push_back(y0z1);
 
-					indices.push_back(y1z1);
-					indices.push_back(y1z0);
-					indices.push_back(y0z1);
+						indices.push_back(y0z0);
+						indices.push_back(y1z0);
+						indices.push_back(y1z1);
 
-					indices.push_back(y1z0);
-					indices.push_back(y0z0);
-					indices.push_back(y0z1);
+
+					} else {
+						indices.push_back(y0z0);
+						indices.push_back(y0z1);
+						indices.push_back(y1z1);
+
+						indices.push_back(y0z0);
+						indices.push_back(y1z1);
+						indices.push_back(y1z0);
+
+					}
+
+
+	
+
+
 
 				}
 
 			}
 		}
 	}
-
+	*/
+	
 	
 	std::cout << "Vertices\n";
 	for (int i = 0; i < vertArray.size(); i+= 3) {
 		std::cout << vertArray[i] << " " << vertArray[i+1] << " " <<  vertArray[i + 2] << "\n";
-	}
 
+	}
+	std::cout << "Verts:" << vertArray.size() << std::endl;
+	
+	/*
 	std::cout << "Indices\n";
 	for (int i = 0; i < indices.size(); i+= 3) {
-		std::cout << indices[i] << " " << indices[i+1] << " " << indices[i+2] << "\n";
+		std::cout << indices[i] << "," << indices[i+1] << "," << indices[i+2] << "\n";
+		if (i % 2 == 0) {
+			std::cout << "----------\n";
+		}
+
 	}
-	
+	*/
+	std::cout << "Used " << vertArray.size()/3 << " verts." << std::endl;
+	std::cout << "Used " << indices.size() / 3 << " indices." << std::endl;
+
 
 	auto end = std::chrono::high_resolution_clock::now();
 	dur = end - start;
 	ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
-	std::cout << "Finished dual contouring in " << ms << "seconds\n";
+	std::cout << "Finished dual contouring in " << ms << " ms\n";
 
 	VertexBuffer vertexBuffer(&vertArray[0],vertArray.size() * sizeof(float));
 	
@@ -252,16 +495,9 @@ glm::fvec3 DualContour::CalculateNormal(float(*function)(float, float, float),gl
 }
 
 glm::fvec3 DualContour::Normalize(glm::fvec3 v) {
-	//Get x^2,y^2,z^2.
-	float x = v.x * v.x;
-	float y = v.y * v.y;
-	float z = v.z * v.z;
 	
-	//Calculate magnitude.
-	float m = sqrt(x + y + z);
-
 	//Finally,normalize by dividing with magnitude.
-	return glm::fvec3(v.x/m,v.y/m,v.z/m);
+	return glm::fvec3(v.x/RANGE,v.y/RANGE,v.z/RANGE);
 }
 
 

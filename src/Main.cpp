@@ -39,7 +39,8 @@ void InitializeImGui(GLFWwindow* window);
 void ShowGUIWindow();
 float CircleFunction(float x, float y, float z);
 float TorusFunction(float x, float y, float z);
-
+float NoiseFunction(float x, float y, float z);
+float HelixFunction(float x, float y, float z);
 //Window size.
 #define WINDOW_WIDTH 1920
 #define WINDOW_HEIGHT 1080
@@ -133,7 +134,7 @@ int main() {
 
 
 	DualContour dualContour;
-	Mesh mesh = dualContour.ExtractSurface(CircleFunction);
+	Mesh mesh = dualContour.ExtractSurface(TorusFunction);
 
 	VertexBuffer vertexBuffer(&dualContour.vertArray[0], dualContour.vertArray.size() * sizeof(float));
 
@@ -144,62 +145,9 @@ int main() {
 	vertexArray.AddBuffer(vertexBuffer, bufferLayout);
 
 	IndexBuffer indexBuffer(&dualContour.indices[0], dualContour.indices.size());
-	indiceCount = dualContour.indices.size();
-	vertexCount = dualContour.vertArray.size();
+	indiceCount = dualContour.indices.size()/3;
+	vertexCount = dualContour.vertArray.size()/3;
 
-	/*
-	srand(time(NULL));
-	float randomNumber = rand() % (2 ^ 10) + 1;
-	
-	//Can't statically allocate this memory because it will cause a stack overflow when the program starts,if SIZE > 128(approx).
-	float* vertices = (float*)malloc((SIZE + 1)*(SIZE + 1) * 3 * sizeof(float));
-	unsigned int* indices = (unsigned int*)malloc(SIZE*SIZE * 2 * 3 * sizeof(unsigned int));
-	//NoiseUtils::InitTables();
-
-	int index = 0;
-	for (int i = 0; i <= SIZE; i++) {
-		float fi = (float)i / SIZE;
-		for (int j = 0; j <= SIZE; j++) {
-			float fj = (float)j / SIZE;
-			vertices[index] = fi;
-			vertices[index + 1] = NoiseUtils::Sum(fi+ randomNumber, 0, fj+ randomNumber,0.5f,10.0f,0.1f,1);
-			vertices[index + 2] = fj;
-			index += 3;
-		}
-	}
-
-
-	bool printVerts = false;
-	if(printVerts){
-		for (int i = 0; i < (SIZE + 1)*(SIZE + 1) * 3; i += 3) {
-			std::cout << "[" << vertices[i] << "," << vertices[i + 1] << "," << vertices[i + 2] << "]" << std::endl;
-		}
-
-	}
-
-
-	std::cout << "Vertices done.\n";
-	std::cout << (SIZE + 1)*(SIZE + 1) * 3 << std::endl;
-	
-	for (int ti = 0,vi = 0,y=0; y < SIZE; y++, vi++) {
-		for (int x = 0; x < SIZE; x++, ti += 6, vi++) {
-			indices[ti] = vi;
-			indices[ti + 3] = indices[ti + 2] = vi + 1;
-			indices[ti + 4] = indices[ti + 1] = vi + SIZE + 1;
-			indices[ti + 5] = vi + SIZE + 2;
-		}
-	}
-
-
-	VertexArray  vertexArray;
-	//Changed 4 to 3.
-	VertexBuffer vertexBuffer(vertices, 3 * (SIZE + 1)*(SIZE + 1) * sizeof(float));
-	VertexBufferLayout bufferLayout;
-	bufferLayout.Push<float>(3, true);
-	vertexArray.AddBuffer(vertexBuffer, bufferLayout);
-
-	IndexBuffer	 indexBuffer(indices, SIZE*SIZE*3*2);
-	*/
 
 	Shader customShader("src/shaders/vshader.vs", "src/shaders/fshader.fs");
 
@@ -381,11 +329,21 @@ void ShowGUIWindow() {
 }
 
 float CircleFunction(float x, float y, float z) {
-	return 15.0f - sqrt(x * x + y * y + z * z);
+	return 8.0f - sqrt(x * x + y * y + z * z);
 }
 
 float TorusFunction(float x,float y,float z){
-	const float R = 64.0f;
-	const float r = R / 2;
-	return pow(sqrt(x*x + y * y) - R, 2) + z * z - r;
+	const float c = 12.0f;
+	const float a = 3.0f;
+	return (c - std::sqrt(x*x + y * y))*(c - std::sqrt(x*x + y * y)) + z * z - a*a;
+}
+
+float HelixFunction(float x,float y,float z){
+	const float r = 20.0f;
+	const float a = 3.0f;
+	return std::pow(x - x * (z / a), 2) + std::pow(y - y * (z / a), 2) - r * r;
+}
+
+float NoiseFunction(float x,float y,float z){
+	return NoiseUtils::SimplexNoise(x, y, z, 1.0f);
 }

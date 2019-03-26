@@ -10,6 +10,7 @@ Qef::~Qef() {
 
 glm::fvec3 Qef::Solve(glm::fvec3 pos,std::vector<glm::fvec3> positions, std::vector<glm::fvec3> normals) {
 
+	
 	const unsigned int rows = normals.size() + 3;
 	//Get the average of positions to find the point towards which we "pull".
 	glm::fvec3 avgPoint = GetAverage(positions,rows-3);
@@ -76,7 +77,7 @@ glm::fvec3 Qef::Solve(glm::fvec3 pos,std::vector<glm::fvec3> positions, std::vec
 	//std::cout << "Result: " << vcl_b2 << std::endl;
 	//std::cout << "[" << pos.x << "," << pos.y << "," << pos.z << "] : " << vcl_b2[0] << " " << vcl_b2[1] << " " << vcl_b2[2] << std::endl;
 	glm::fvec3 result(vcl_b2[0], vcl_b2[1], vcl_b2[2]);
-	//std::cout << result.x << "," << result.y << "," << result.z << std::endl;
+	printf("(%d,%d,%d) : [%1.2f,%1.2f,%1.2f]\n", (int)pos.x, (int)pos.y, (int)pos.z, result.x, result.y, result.z);
 	return result;
 }
 

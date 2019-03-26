@@ -10,8 +10,9 @@ public:
 	~TreeNode();
 
 	//WARNING:If you have more than 4,294,967,295 verts in your mesh,this will be a problem.
-	unsigned int index;
+	unsigned int index = 0;
 	uint8_t edgeHasSignChange = 0;
+	bool used = false;
 };
 
 #endif
