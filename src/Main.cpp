@@ -329,12 +329,12 @@ void ShowGUIWindow() {
 }
 
 float CircleFunction(float x, float y, float z) {
-	return 8.0f - sqrt(x * x + y * y + z * z);
+	return 32.0f - sqrt(x * x + y * y + z * z);
 }
 
 float TorusFunction(float x,float y,float z){
-	const float c = 12.0f;
-	const float a = 3.0f;
+	const float c = 50.0f;
+	const float a = 6.0f;
 	return (c - std::sqrt(x*x + y * y))*(c - std::sqrt(x*x + y * y)) + z * z - a*a;
 }
 
@@ -345,5 +345,8 @@ float HelixFunction(float x,float y,float z){
 }
 
 float NoiseFunction(float x,float y,float z){
-	return NoiseUtils::SimplexNoise(x, y, z, 1.0f);
+	float noiseValue =  NoiseUtils::SimplexNoise(x, y, z, 1.0f);
+
+	if (noiseValue > 0) return 1.0f;
+	return -1.0f;
 }

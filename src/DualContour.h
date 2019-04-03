@@ -12,7 +12,7 @@
 #include "Mesh.h"
 #include "Qef.h"
 
-#define RANGE 16
+#define RANGE 64
 #define MIN -RANGE
 #define MAX RANGE
 #define THRESHOLD 0

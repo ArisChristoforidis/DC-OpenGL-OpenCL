@@ -2,7 +2,7 @@
 #define QEF_H
 
 //Activate ublas support for ViennaCL
-#define VIENNACL_WITH_OPENMP
+#define VIENNACL_WITH_OPENCL
 #define VIENNACL_WITH_UBLAS
 
 //Boost headers.

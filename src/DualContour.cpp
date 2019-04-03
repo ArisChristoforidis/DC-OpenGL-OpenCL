@@ -1,5 +1,5 @@
 #include "DualContour.h"
-
+#include <omp.h>
 
 DualContour::DualContour() {
 }
@@ -37,6 +37,7 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 
 	auto start = std::chrono::high_resolution_clock::now();
 	unsigned int index = 0;
+	
 	for (int x = MIN; x < MAX; x++) {
 		for (int y = MIN; y < MAX; y++) {
 			for (int z = MIN; z < MAX; z++) {
@@ -439,7 +440,7 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 	}
 	*/
 	
-	
+	/*
 	std::cout << "Vertices\n";
 	for (int i = 0; i < vertArray.size(); i+= 3) {
 		std::cout << vertArray[i] << " " << vertArray[i+1] << " " <<  vertArray[i + 2] << "\n";
@@ -447,7 +448,7 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 	}
 	std::cout << "Verts:" << vertArray.size() << std::endl;
 	
-	/*
+	
 	std::cout << "Indices\n";
 	for (int i = 0; i < indices.size(); i+= 3) {
 		std::cout << indices[i] << "," << indices[i+1] << "," << indices[i+2] << "\n";
@@ -456,15 +457,15 @@ Mesh DualContour::ExtractSurface(float(*function)(float, float, float)) {
 		}
 
 	}
-	*/
+	
 	std::cout << "Used " << vertArray.size()/3 << " verts." << std::endl;
 	std::cout << "Used " << indices.size() / 3 << " indices." << std::endl;
-
+	*/
 
 	auto end = std::chrono::high_resolution_clock::now();
 	dur = end - start;
 	ms = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
-	std::cout << "Finished dual contouring in " << ms << " ms\n";
+	std::cout << "Finished dual contouring in " << ms << " sec\n";
 
 	VertexBuffer vertexBuffer(&vertArray[0],vertArray.size() * sizeof(float));
 	
