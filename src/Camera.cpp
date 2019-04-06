@@ -1,5 +1,16 @@
 #include "Camera.h"
 
+Camera* Camera::instance = NULL;
+
+
+Camera* Camera::getInstance() {
+	if (instance == NULL) {
+		std::cout << "Created a camera." << std::endl;
+		instance = new Camera();
+	}
+
+	return instance;
+}
 
 Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch) {
 	this->position = position;
@@ -14,13 +25,11 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch) {
 	UpdateCamera();
 }
 
-Camera::~Camera() {}
-
 glm::mat4 Camera::GetViewMatrix() {
 	return glm::lookAt(position, position + front, up);
 }
 
-void Camera::ProcessKeyboardMovement(CameraMovement dir, float deltaTime) {
+void Camera::ProcessKeyboardMovement(CameraMovement dir, double deltaTime) {
 	float velocity = movementSpeed * deltaTime;
 	
 	if(dir == FORWARD)position += front * velocity;
@@ -30,6 +39,7 @@ void Camera::ProcessKeyboardMovement(CameraMovement dir, float deltaTime) {
 	if(dir == RIGHT)position += right * velocity;
 
 	if(dir == LEFT)position += -right * velocity;
+	std::cout << "DeltaTime: " << deltaTime << std::endl;
 }
 
 void Camera::ProcessMouseLook(float xOffset, float yOffset, GLboolean constrainPitch) {

@@ -1,5 +1,4 @@
 #include "DualContour.h"
-#include <omp.h>
 
 DualContour::DualContour() {
 }

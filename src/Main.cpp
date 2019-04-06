@@ -16,8 +16,9 @@
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
+#include <thread>
 
-//Project classes headers.
+//Project file headers.
 #include "Shader.h"
 #include "Camera.h"
 #include "VertexBuffer.h"
@@ -26,52 +27,41 @@
 #include "Renderer.h"
 #include "NoiseUtils.h"
 #include "DualContour.h"
-
-//#include <CL/cl.hpp>
+#include "InputManager.h"
+#include "ShapeFunctions.h"
+#include "GUI.h"
 
 //Function prototypes.
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void MouseCallback(GLFWwindow* window, double xPos, double yPos);
-void ProcessKeyboardInput(GLFWwindow *window);
+void MouseInputWrapper(GLFWwindow* window, double xPos, double yPos);
 void ToggleWireframeMode();
-void CalculateDeltaTime();
-void InitializeImGui(GLFWwindow* window);
-void ShowGUIWindow();
-float CircleFunction(float x, float y, float z);
-float TorusFunction(float x, float y, float z);
-float NoiseFunction(float x, float y, float z);
-float HelixFunction(float x, float y, float z);
+double CalculateDeltaTime();
+
 //Window size.
 #define WINDOW_WIDTH 1920
 #define WINDOW_HEIGHT 1080
 
-#define SIZE 128
-
 bool isWireframeEnabled = false;
 
-int lastKeyState = GLFW_RELEASE;
-float deltaTime = 0.0f;
 double lastFrame = 0.0f;
-bool hasMouseMoved = false;
-float lastX = WINDOW_WIDTH / 2.0f;
-float lastY = WINDOW_HEIGHT / 2.0f;
-Camera camera;
 
 //GUI window variables.
-unsigned int indiceCount;
+unsigned int indexCount;
 unsigned int vertexCount;
 
-
+InputManager* inputManager;
 int main() {
 	
+
 	//Initialize GLFW.
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glEnable(GL_DEPTH_TEST);
 
 	//Create a window.
-	GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Procedurally Generated Terrain", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Isosurface Extraction in OpenGL", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
@@ -89,49 +79,13 @@ int main() {
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+	inputManager = new InputManager(WINDOW_WIDTH, WINDOW_HEIGHT, ToggleWireframeMode);
+
 	//Camera.
-	glfwSetCursorPosCallback(window, MouseCallback);
+	glfwSetCursorPosCallback(window, MouseInputWrapper);
 	//Lock and hide cursor.
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-
-	//Coordinates must be normalized(Between [-1,1]).
-	/*
-	float vertices[] = {
-		// positions        
-		 1.0f,  1.0f, 1.0f,
-		 1.0f, -1.0f, 1.0f,
-		-1.0f, -1.0f, 1.0f,
-		-1.0f,  1.0f, 1.0f,
-		 1.0f,  1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f
-	};
-
-	unsigned int indices[] = {
-		0,1,3,
-		1,2,3,
-		3,2,7,
-		2,6,7,
-		4,5,7,
-		5,6,7,
-		0,1,4,
-		1,5,4,
-		4,0,7,
-		0,3,7,
-		5,1,6,
-		1,2,6
-	};
-	*/
 	
-
-	/*
-	unsigned int indices[] = {
-		3,1,2,
-		1,0,2
-	};*/
-
 
 	DualContour dualContour;
 	Mesh mesh = dualContour.ExtractSurface(TorusFunction);
@@ -145,7 +99,8 @@ int main() {
 	vertexArray.AddBuffer(vertexBuffer, bufferLayout);
 
 	IndexBuffer indexBuffer(&dualContour.indices[0], dualContour.indices.size());
-	indiceCount = dualContour.indices.size()/3;
+	
+	indexCount = dualContour.indices.size()/3;
 	vertexCount = dualContour.vertArray.size()/3;
 
 
@@ -161,28 +116,27 @@ int main() {
 
 	glm::mat4 transform = glm::mat4(1.0f);
 
-	glEnable(GL_DEPTH_TEST);
 
+	Camera* camera = Camera::getInstance();
 
 	Renderer renderer;
 
-	InitializeImGui(window);
+	InitializeImGui(window,WINDOW_WIDTH,WINDOW_HEIGHT);
 
 	while (!glfwWindowShouldClose(window)) {
-		CalculateDeltaTime();
+		double deltaTime = CalculateDeltaTime();
 		
 		//Input.
-		ProcessKeyboardInput(window);
-
+		inputManager->ProcessKeyboardInput(window,deltaTime);
 
 		customShader.setMat4("model", model);
-		glm::mat4 view = camera.GetViewMatrix();
+		glm::mat4 view = camera->GetViewMatrix();
 		customShader.setMat4("view", view);
 		customShader.setMat4("projection", projection);
 		//Render a mesh.
 		renderer.Draw(vertexArray, indexBuffer, customShader);
 		//Show GUI.
-		ShowGUIWindow();
+		ShowGUIWindow(vertexCount,indexCount,deltaTime);
 
 		
 		//Swap buffers to prevent flickering.
@@ -204,47 +158,6 @@ void framebuffer_size_callback(GLFWwindow * window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
 
-//Handles mouse movement.
-void MouseCallback(GLFWwindow * window, double xPos, double yPos) {
-
-	//Used for the first mouse movement,when lastX and lastY have no values.
-	if (!hasMouseMoved) {
-		hasMouseMoved = true;
-		lastX = xPos;
-		lastY = yPos;
-	}
-
-	float xOffset = (float)(xPos - lastX);
-	float yOffset = (float)(lastY - yPos);
-
-	lastX = xPos;
-	lastY = yPos;
-
-	camera.ProcessMouseLook(xOffset, yOffset);
-}
-
-//Handles keyboard input.
-void ProcessKeyboardInput(GLFWwindow * window) {
-
-	//If [ESC] is pressed, stop execution.
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-		glfwSetWindowShouldClose(window, true);
-	}
-
-	//If [TAB] is pressed,toggle wireframe mode.
-	if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS && lastKeyState == GLFW_RELEASE) {
-		lastKeyState = GLFW_PRESS;
-	} else if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE && lastKeyState == GLFW_PRESS) {
-		ToggleWireframeMode();
-		lastKeyState = GLFW_RELEASE;
-	}
-
-	//If any of the [W,A,S,D] keys are pressed,move the camera accordingly.
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera.ProcessKeyboardMovement(FORWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camera.ProcessKeyboardMovement(BACKWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camera.ProcessKeyboardMovement(LEFT, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camera.ProcessKeyboardMovement(RIGHT, deltaTime);
-}
 
 //Toggle wireframe mode(only shows edges of a mesh).
 void ToggleWireframeMode() {
@@ -258,95 +171,19 @@ void ToggleWireframeMode() {
 }
 
 //Calculates the time it took to process the last frame.
-void CalculateDeltaTime() {
+double CalculateDeltaTime() {
 	double currentFrame = glfwGetTime();
-	deltaTime = currentFrame - lastFrame;
+	double deltaTime = currentFrame - lastFrame;
 	lastFrame = currentFrame;
+	return deltaTime;
 }
 
-//Initializes ImGui.Run once.
-void InitializeImGui(GLFWwindow* window) {
-
-	//Gui for the window.
-	ImGui::CreateContext();
-	ImGui::StyleColorsDark();
-	ImGuiIO &io = ImGui::GetIO();
-	io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
-	io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
-
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
-
-	//Setup keymap.
-	io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
-	io.KeyMap[ImGuiKey_LeftArrow] = GLFW_KEY_LEFT;
-	io.KeyMap[ImGuiKey_RightArrow] = GLFW_KEY_RIGHT;
-	io.KeyMap[ImGuiKey_UpArrow] = GLFW_KEY_UP;
-	io.KeyMap[ImGuiKey_DownArrow] = GLFW_KEY_DOWN;
-	io.KeyMap[ImGuiKey_PageUp] = GLFW_KEY_PAGE_UP;
-	io.KeyMap[ImGuiKey_PageDown] = GLFW_KEY_PAGE_DOWN;
-	io.KeyMap[ImGuiKey_Home] = GLFW_KEY_HOME;
-	io.KeyMap[ImGuiKey_End] = GLFW_KEY_END;
-	io.KeyMap[ImGuiKey_Insert] = GLFW_KEY_INSERT;
-	io.KeyMap[ImGuiKey_Delete] = GLFW_KEY_DELETE;
-	io.KeyMap[ImGuiKey_Backspace] = GLFW_KEY_BACKSPACE;
-	io.KeyMap[ImGuiKey_Space] = GLFW_KEY_SPACE;
-	io.KeyMap[ImGuiKey_Enter] = GLFW_KEY_ENTER;
-	io.KeyMap[ImGuiKey_Escape] = GLFW_KEY_ESCAPE;
-	io.KeyMap[ImGuiKey_A] = GLFW_KEY_A;
-	io.KeyMap[ImGuiKey_C] = GLFW_KEY_C;
-	io.KeyMap[ImGuiKey_V] = GLFW_KEY_V;
-	io.KeyMap[ImGuiKey_X] = GLFW_KEY_X;
-	io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
-	io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
-
-	ImGui_ImplOpenGL3_Init();
-	io.DisplaySize = ImVec2(WINDOW_WIDTH, WINDOW_HEIGHT);
+void MouseInputWrapper(GLFWwindow* window, double xPos, double yPos) {
+	/*I cannot pass member functions as a callback to glfwSetCursorPosCallback
+	so I have to call ProcessMouseInput this way.*/
+	inputManager->ProcessMouseInput(xPos, yPos);
 }
 
-//Shows GUI window.Run every frame.
-void ShowGUIWindow() {
 
-	//Create a new frame for the GUI.
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui::NewFrame();
 
-	//Set GUI window size.
-	ImGui::SetNextWindowSize(ImVec2(250, 100));
 
-	//GUI layout.
-	bool show = true;
-	ImGui::Begin("Stats", &show); {
-		ImGui::Text("Framerate: %.3f (%.4f sec)", 1 / deltaTime, deltaTime);
-		ImGui::Text("Vertices: %d", vertexCount);
-		ImGui::Text("Triangles: %d", indiceCount);
-
-	}
-	ImGui::End();
-
-	//Render GUI.
-	ImGui::Render();
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
-
-float CircleFunction(float x, float y, float z) {
-	return 32.0f - sqrt(x * x + y * y + z * z);
-}
-
-float TorusFunction(float x,float y,float z){
-	const float c = 50.0f;
-	const float a = 6.0f;
-	return (c - std::sqrt(x*x + y * y))*(c - std::sqrt(x*x + y * y)) + z * z - a*a;
-}
-
-float HelixFunction(float x,float y,float z){
-	const float r = 20.0f;
-	const float a = 3.0f;
-	return std::pow(x - x * (z / a), 2) + std::pow(y - y * (z / a), 2) - r * r;
-}
-
-float NoiseFunction(float x,float y,float z){
-	float noiseValue =  NoiseUtils::SimplexNoise(x, y, z, 1.0f);
-
-	if (noiseValue > 0) return 1.0f;
-	return -1.0f;
-}

@@ -31,15 +31,17 @@ public:
 	float movementSpeed;
 	float mouseSensitivity;
 
-	Camera(glm::vec3 position = glm::vec3(0.0f,0.0f,0.0f),glm::vec3 up = glm::vec3(0.0f,1.0f,0.0f),float yaw = YAW,float pitch = PITCH);
-	~Camera();
+	static Camera* getInstance();
 
 	glm::mat4 GetViewMatrix();
 
-	void ProcessKeyboardMovement(CameraMovement dir, float deltaTime);
+	void ProcessKeyboardMovement(CameraMovement dir, double deltaTime);
 	void ProcessMouseLook(float xOffset, float yOffset, GLboolean constrainPitch = true);
 
 private:
+	static Camera* instance;
+	Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH);
+
 	void UpdateCamera();
 
 
