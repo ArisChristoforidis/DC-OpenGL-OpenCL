@@ -12,7 +12,7 @@
 #include "Mesh.h"
 #include "Qef.h"
 
-#define RANGE 64
+#define RANGE 16
 #define MIN -RANGE
 #define MAX RANGE
 #define THRESHOLD 0
@@ -23,7 +23,7 @@ public:
 	DualContour();
 	~DualContour();
 
-	Mesh ExtractSurface(float (*function)(float, float, float));
+	void ExtractSurface(float (*function)(float, float, float));
 	std::vector<float> vertArray;
 	std::vector<unsigned int> indices;
 

@@ -6,14 +6,31 @@
 
 class Mesh {
 public:
-	Mesh(VertexArray vArray,IndexBuffer iBuffer) : vertexArray(vArray),indexBuffer(iBuffer){};
+	Mesh();
 	~Mesh();
 
-	VertexArray& GetVertexArray();
-	IndexBuffer& GetIndexBuffer();
+	void CreateVertexArray(std::vector<float> data);
+	void CreateIndexBuffer(std::vector<unsigned int> data);
+
+	VertexArray &GetVertexArray();
+	IndexBuffer &GetIndexBuffer();
+
+	unsigned int GetVertexCount();
+	unsigned int GetIndexCount();
+	VertexArray* vertexArray;
+	IndexBuffer* indexBuffer;
+
+	std::vector<float> vertices;
+	std::vector<unsigned int> indices;
+
 private:
-	VertexArray vertexArray;
-	IndexBuffer indexBuffer;
+	VertexBuffer* vertexBuffer;
+	VertexBufferLayout vertexBufferLayout;
+
+	unsigned int vertexCount;
+	unsigned int indexCount;
+
+
 };
 
 #endif

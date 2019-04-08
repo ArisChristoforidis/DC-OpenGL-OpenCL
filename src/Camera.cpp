@@ -2,10 +2,8 @@
 
 Camera* Camera::instance = NULL;
 
-
 Camera* Camera::getInstance() {
 	if (instance == NULL) {
-		std::cout << "Created a camera." << std::endl;
 		instance = new Camera();
 	}
 
@@ -39,11 +37,9 @@ void Camera::ProcessKeyboardMovement(CameraMovement dir, double deltaTime) {
 	if(dir == RIGHT)position += right * velocity;
 
 	if(dir == LEFT)position += -right * velocity;
-	std::cout << "DeltaTime: " << deltaTime << std::endl;
 }
 
 void Camera::ProcessMouseLook(float xOffset, float yOffset, GLboolean constrainPitch) {
-
 	xOffset *= mouseSensitivity;
 	yOffset *= mouseSensitivity;
 
@@ -56,7 +52,6 @@ void Camera::ProcessMouseLook(float xOffset, float yOffset, GLboolean constrainP
 	}
 
 	UpdateCamera();
-
 }
 
 void Camera::UpdateCamera() {

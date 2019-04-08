@@ -152,6 +152,7 @@
     <ClCompile Include="src\VertexBuffer.cpp" />
     <ClCompile Include="src\VertexBufferLayout.cpp" />
     <ClCompile Include="src\TreeNode.cpp" />
+    <ClCompile Include="src\WorkerFunctions.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\InputManager.h" />
@@ -177,6 +178,7 @@
     <ClInclude Include="src\VertexBuffer.h" />
     <ClInclude Include="src\VertexBufferLayout.h" />
     <ClInclude Include="src\TreeNode.h" />
+    <ClInclude Include="src\WorkerFunctions.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="src\imgui\LICENCE.txt" />

@@ -27,15 +27,19 @@
 #include "Renderer.h"
 #include "NoiseUtils.h"
 #include "DualContour.h"
+#include "Mesh.h"
 #include "InputManager.h"
-#include "ShapeFunctions.h"
+#include "WorkerFunctions.h"
 #include "GUI.h"
+
+int main();
 
 //Function prototypes.
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void MouseInputWrapper(GLFWwindow* window, double xPos, double yPos);
 void ToggleWireframeMode();
-double CalculateDeltaTime();
+void UpdateShaderVariables(Shader* shader,glm::mat4 model,glm::mat4 view,glm::mat4 projection);
+double CalculateDeltaTime(double* pFrame);
 
 //Window size.
 #define WINDOW_WIDTH 1920
@@ -43,22 +47,19 @@ double CalculateDeltaTime();
 
 bool isWireframeEnabled = false;
 
-double lastFrame = 0.0f;
 
-//GUI window variables.
-unsigned int indexCount;
-unsigned int vertexCount;
 
 InputManager* inputManager;
 int main() {
-	
+	double previousFrame = 0.0f;
+	std::vector<Mesh> objects;
+	unsigned int objectCount = 0;
 
 	//Initialize GLFW.
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glEnable(GL_DEPTH_TEST);
 
 	//Create a window.
 	GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Isosurface Extraction in OpenGL", NULL, NULL);
@@ -78,37 +79,23 @@ int main() {
 
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glEnable(GL_DEPTH_TEST);
 
 	inputManager = new InputManager(WINDOW_WIDTH, WINDOW_HEIGHT, ToggleWireframeMode);
 
-	//Camera.
+	//Mouse movement callback to rotate the camera.
 	glfwSetCursorPosCallback(window, MouseInputWrapper);
 	//Lock and hide cursor.
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	
 
-	DualContour dualContour;
-	Mesh mesh = dualContour.ExtractSurface(TorusFunction);
 
-	VertexBuffer vertexBuffer(&dualContour.vertArray[0], dualContour.vertArray.size() * sizeof(float));
-
-	VertexBufferLayout bufferLayout;
-	bufferLayout.Push<float>(3, true);
-
-	VertexArray vertexArray;
-	vertexArray.AddBuffer(vertexBuffer, bufferLayout);
-
-	IndexBuffer indexBuffer(&dualContour.indices[0], dualContour.indices.size());
-	
-	indexCount = dualContour.indices.size()/3;
-	vertexCount = dualContour.vertArray.size()/3;
-
+	Work(objects,objectCount);
+	//std::thread(&Work, objects, objectCount);
 
 	Shader customShader("src/shaders/vshader.vs", "src/shaders/fshader.fs");
 
 	//Going 3D.
 	glm::mat4 model = glm::mat4(1.0f);
-	//model = glm::scale(model, glm::vec3(10.0f));
 
 	//First parameter is essentially the FOV.
 	glm::mat4 projection = glm::mat4(1.0f);
@@ -116,27 +103,37 @@ int main() {
 
 	glm::mat4 transform = glm::mat4(1.0f);
 
-
 	Camera* camera = Camera::getInstance();
 
 	Renderer renderer;
 
 	InitializeImGui(window,WINDOW_WIDTH,WINDOW_HEIGHT);
 
+
 	while (!glfwWindowShouldClose(window)) {
-		double deltaTime = CalculateDeltaTime();
+		//Calculate deltaTime.
+		double deltaTime = CalculateDeltaTime(&previousFrame);
 		
-		//Input.
+		//Read keyboard input.
 		inputManager->ProcessKeyboardInput(window,deltaTime);
 
-		customShader.setMat4("model", model);
-		glm::mat4 view = camera->GetViewMatrix();
-		customShader.setMat4("view", view);
-		customShader.setMat4("projection", projection);
-		//Render a mesh.
-		renderer.Draw(vertexArray, indexBuffer, customShader);
+		//Update shader depending on the camera position.
+		UpdateShaderVariables(&customShader, model, camera->GetViewMatrix(), projection);
+
+		unsigned int totalVertexCount = 0;
+		unsigned int totalIndexCount  = 0;
+
+		//Render meshes.
+		for (int i = 0; i < objectCount;i++) {
+			renderer.Draw(objects[i].GetVertexArray(), objects[i].GetIndexBuffer(), customShader);
+			
+			//Count total vertices and indices on the side.
+			totalVertexCount += objects[i].GetVertexCount();
+			totalIndexCount += objects[i].GetIndexCount();
+		}
+
 		//Show GUI.
-		ShowGUIWindow(vertexCount,indexCount,deltaTime);
+		ShowGUIWindow(totalVertexCount, totalIndexCount,deltaTime);
 
 		
 		//Swap buffers to prevent flickering.
@@ -149,8 +146,6 @@ int main() {
 	glfwTerminate();
 	return 0;
 }
-
-
 
 
 //Changes the viewport when the user resizes the window.
@@ -171,10 +166,10 @@ void ToggleWireframeMode() {
 }
 
 //Calculates the time it took to process the last frame.
-double CalculateDeltaTime() {
+double CalculateDeltaTime(double* pFrame) {
 	double currentFrame = glfwGetTime();
-	double deltaTime = currentFrame - lastFrame;
-	lastFrame = currentFrame;
+	double deltaTime = currentFrame - *pFrame;
+	*pFrame = currentFrame;
 	return deltaTime;
 }
 
@@ -184,6 +179,11 @@ void MouseInputWrapper(GLFWwindow* window, double xPos, double yPos) {
 	inputManager->ProcessMouseInput(xPos, yPos);
 }
 
+void UpdateShaderVariables(Shader* shader,glm::mat4 model, glm::mat4 view, glm::mat4 projection) {
+	shader->setMat4("model", model);
+	shader->setMat4("view", view);
+	shader->setMat4("projection", projection);
+}
 
 
 
