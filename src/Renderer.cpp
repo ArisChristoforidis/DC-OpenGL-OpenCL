@@ -17,8 +17,6 @@ void Renderer::ClearScreen() const {
 }
 
 void Renderer::Draw(VertexArray &vertexArray, IndexBuffer &indexBuffer, Shader &shader) const {
-	ClearScreen();
-
 	shader.use();
 	vertexArray.Bind();
 	indexBuffer.Bind();

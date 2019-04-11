@@ -1,19 +1,11 @@
 #include "WorkerFunctions.h"
 
 
-DualContour dualContour;
-void Work(std::vector<Mesh> &objects, unsigned int &objectCount) {
-	dualContour.ExtractSurface(TorusFunction);
+void Work(MeshInfo &info, bool &updateObjects) {
+	DualContour dualContour;
+	dualContour.ExtractSurface(CircleFunction);
 
-	/*
-	mesh->CreateVertexArray(dualContour.vertArray);
-	mesh->CreateIndexBuffer(dualContour.indices);
-	*/
-
-	Mesh mesh;
-	mesh.CreateVertexArray(dualContour.vertArray);
-	mesh.CreateIndexBuffer(dualContour.indices);
-	objects.push_back(mesh);
-	objectCount++;
-	std::cout << "Object Count: " << objectCount << std::endl;
+	info.vertices = dualContour.vertArray;
+	info.indices = dualContour.indices;
+	updateObjects = true;
 }

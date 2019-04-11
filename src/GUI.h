@@ -10,6 +10,6 @@
 
 void InitializeImGui(GLFWwindow* window, int width, int height);
 void ShowGUIWindow(int vertexCount, int indiceCount, float deltaTime);
-
+void ResizeUI(int width, int height);
 
 #endif

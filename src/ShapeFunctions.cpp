@@ -5,8 +5,8 @@ float CircleFunction(float x, float y, float z) {
 }
 
 float TorusFunction(float x, float y, float z) {
-	const float c = 12.5f;
-	const float a = 1.5f;
+	const float c = 50.0f;
+	const float a = 6.0f;
 	return (c - sqrt(x*x + y * y))*(c - sqrt(x*x + y * y)) + z * z - a * a;
 }
 

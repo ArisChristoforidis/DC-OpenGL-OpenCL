@@ -157,6 +157,7 @@
   <ItemGroup>
     <ClInclude Include="src\InputManager.h" />
     <ClInclude Include="src\GUI.h" />
+    <ClInclude Include="src\MeshInfo.h" />
     <ClInclude Include="src\Qef.h" />
     <ClInclude Include="src\DualContour.h" />
     <ClInclude Include="src\Mesh.h" />

@@ -3,8 +3,8 @@
 
 #include "DualContour.h"
 #include "ShapeFunctions.h"
+#include "MeshInfo.h"
 
-
-	void Work(std::vector<Mesh> &objects,unsigned int &objectCount);
+void Work(MeshInfo &info,bool &updateObjects);
 
 #endif

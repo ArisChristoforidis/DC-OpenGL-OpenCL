@@ -164,6 +164,9 @@
     <ClInclude Include="src\WorkerFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\MeshInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="src\imgui\LICENCE.txt" />

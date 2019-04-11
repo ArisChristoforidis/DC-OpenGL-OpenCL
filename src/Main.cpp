@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <thread>
+#include <functional>
 
 //Project file headers.
 #include "Shader.h"
@@ -28,6 +29,7 @@
 #include "NoiseUtils.h"
 #include "DualContour.h"
 #include "Mesh.h"
+#include "MeshInfo.h"
 #include "InputManager.h"
 #include "WorkerFunctions.h"
 #include "GUI.h"
@@ -47,20 +49,22 @@ double CalculateDeltaTime(double* pFrame);
 
 bool isWireframeEnabled = false;
 
-
+void TestFunc() {
+	std::cout << "Hello." << std::endl;
+}
 
 InputManager* inputManager;
 int main() {
 	double previousFrame = 0.0f;
 	std::vector<Mesh> objects;
-	unsigned int objectCount = 0;
+	bool updateObjectList = false;
 
 	//Initialize GLFW.
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+	
 	//Create a window.
 	GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Isosurface Extraction in OpenGL", NULL, NULL);
 	if (window == NULL) {
@@ -79,6 +83,7 @@ int main() {
 
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	//Enable depth testing for our 3D meshes.
 	glEnable(GL_DEPTH_TEST);
 
 	inputManager = new InputManager(WINDOW_WIDTH, WINDOW_HEIGHT, ToggleWireframeMode);
@@ -89,8 +94,9 @@ int main() {
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 
-	Work(objects,objectCount);
-	//std::thread(&Work, objects, objectCount);
+	//Work(objects,objectCount);
+	MeshInfo info;
+	std::thread workerThread(Work, std::ref(info),std::ref(updateObjectList));
 
 	Shader customShader("src/shaders/vshader.vs", "src/shaders/fshader.fs");
 
@@ -120,11 +126,21 @@ int main() {
 		//Update shader depending on the camera position.
 		UpdateShaderVariables(&customShader, model, camera->GetViewMatrix(), projection);
 
+		if (updateObjectList) {
+			workerThread.join();
+			Mesh mesh(info);
+			objects.push_back(mesh);
+			updateObjectList = false;
+		}
+
+		//Clear the screen.
+		renderer.ClearScreen();
+
 		unsigned int totalVertexCount = 0;
-		unsigned int totalIndexCount  = 0;
+		unsigned int totalIndexCount = 0;
 
 		//Render meshes.
-		for (int i = 0; i < objectCount;i++) {
+		for (int i = 0; i < objects.size();i++) {
 			renderer.Draw(objects[i].GetVertexArray(), objects[i].GetIndexBuffer(), customShader);
 			
 			//Count total vertices and indices on the side.
@@ -151,6 +167,7 @@ int main() {
 //Changes the viewport when the user resizes the window.
 void framebuffer_size_callback(GLFWwindow * window, int width, int height) {
 	glViewport(0, 0, width, height);
+	ResizeUI(width, height);
 }
 
 
@@ -184,6 +201,3 @@ void UpdateShaderVariables(Shader* shader,glm::mat4 model, glm::mat4 view, glm::
 	shader->setMat4("view", view);
 	shader->setMat4("projection", projection);
 }
-
-
-

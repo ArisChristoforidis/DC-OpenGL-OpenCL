@@ -2,9 +2,11 @@
 
 
 
-Mesh::Mesh(){
+Mesh::Mesh(MeshInfo info) {
 	this->vertexBufferLayout.Push<float>(3, true);
-	this->vertexArray = new VertexArray();
+	
+	CreateVertexArray(info.vertices);
+	CreateIndexBuffer(info.indices);
 }
 
 Mesh::~Mesh() {
@@ -16,6 +18,7 @@ void Mesh::CreateVertexArray(std::vector<float> data){
 	this->vertices = data;
 	this->vertexBuffer = new VertexBuffer(&this->vertices[0], this->vertices.size() * sizeof(float));
 
+	this->vertexArray = new VertexArray();
 	this->vertexArray->AddBuffer(*vertexBuffer, this->vertexBufferLayout);
 	this->vertexCount = this->vertices.size() / 3;
 }

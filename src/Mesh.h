@@ -3,32 +3,34 @@
 
 #include "VertexArray.h"
 #include "IndexBuffer.h"
+#include "MeshInfo.h"
 
 class Mesh {
 public:
-	Mesh();
+	Mesh(MeshInfo info);
 	~Mesh();
 
-	void CreateVertexArray(std::vector<float> data);
-	void CreateIndexBuffer(std::vector<unsigned int> data);
 
 	VertexArray &GetVertexArray();
 	IndexBuffer &GetIndexBuffer();
 
 	unsigned int GetVertexCount();
 	unsigned int GetIndexCount();
+
+
+private:
+	VertexBuffer* vertexBuffer;
+	VertexBufferLayout vertexBufferLayout;
 	VertexArray* vertexArray;
 	IndexBuffer* indexBuffer;
 
 	std::vector<float> vertices;
 	std::vector<unsigned int> indices;
-
-private:
-	VertexBuffer* vertexBuffer;
-	VertexBufferLayout vertexBufferLayout;
-
 	unsigned int vertexCount;
 	unsigned int indexCount;
+
+	void CreateVertexArray(std::vector<float> data);
+	void CreateIndexBuffer(std::vector<unsigned int> data);
 
 
 };

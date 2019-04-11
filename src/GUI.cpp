@@ -36,9 +36,12 @@ void InitializeImGui(GLFWwindow* window, int width, int height) {
 	io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
 
 	ImGui_ImplOpenGL3_Init();
-	io.DisplaySize = ImVec2(width, height);
+	ResizeUI(width,height);
 }
 
+void ResizeUI(int width, int height) {
+	ImGui::GetIO().DisplaySize = ImVec2(width, height);
+}
 
 //Shows GUI window.Run every frame.
 void ShowGUIWindow(int vertexCount, int indiceCount, float deltaTime) {
