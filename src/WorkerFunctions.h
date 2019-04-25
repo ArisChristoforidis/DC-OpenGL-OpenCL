@@ -3,8 +3,8 @@
 
 #include "DualContour.h"
 #include "ShapeFunctions.h"
-#include "MeshInfo.h"
+#include "MeshData.h"
 
-void Work(MeshInfo &info,bool &updateObjects);
+void Work(MeshData &info,bool &updateObjects);
 
 #endif

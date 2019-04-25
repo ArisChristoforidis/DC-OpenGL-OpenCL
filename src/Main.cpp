@@ -29,7 +29,8 @@
 #include "NoiseUtils.h"
 #include "DualContour.h"
 #include "Mesh.h"
-#include "MeshInfo.h"
+#include "ComputeManager.h"
+#include "MeshData.h"
 #include "InputManager.h"
 #include "WorkerFunctions.h"
 #include "GUI.h"
@@ -95,8 +96,8 @@ int main() {
 
 
 	//Work(objects,objectCount);
-	MeshInfo info;
-	std::thread workerThread(Work, std::ref(info),std::ref(updateObjectList));
+	MeshData data;
+	std::thread workerThread(Work, std::ref(data),std::ref(updateObjectList));
 
 	Shader customShader("src/shaders/vshader.vs", "src/shaders/fshader.fs");
 
@@ -115,6 +116,7 @@ int main() {
 
 	InitializeImGui(window,WINDOW_WIDTH,WINDOW_HEIGHT);
 
+	ComputeManager manager;
 
 	while (!glfwWindowShouldClose(window)) {
 		//Calculate deltaTime.
@@ -128,7 +130,7 @@ int main() {
 
 		if (updateObjectList) {
 			workerThread.join();
-			Mesh mesh(info);
+			Mesh mesh(data);
 			objects.push_back(mesh);
 			updateObjectList = false;
 		}

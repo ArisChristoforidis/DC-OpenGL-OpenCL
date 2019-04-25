@@ -1,11 +1,13 @@
 #include "WorkerFunctions.h"
 
 
-void Work(MeshInfo &info, bool &updateObjects) {
+void Work(MeshData &data, bool &updateObjects) {
 	DualContour dualContour;
-	dualContour.ExtractSurface(CircleFunction);
+	dualContour.ExtractSurface(TorusFunction);
 
-	info.vertices = dualContour.vertArray;
-	info.indices = dualContour.indices;
+
+
+	data.vertices = dualContour.vertArray;
+	data.indices = dualContour.indices;
 	updateObjects = true;
 }

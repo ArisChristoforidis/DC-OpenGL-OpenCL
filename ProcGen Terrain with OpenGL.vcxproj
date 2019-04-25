@@ -70,7 +70,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>E:\OPENGL_GLFW\Link from here\Includes;$(IncludePath)</IncludePath>
+    <IncludePath>E:\OPENGL_GLFW\Link from here\Includes;E:\OPENGL_GLFW\OpenCL\OpenCL-CLHPP\build\include;$(IncludePath)</IncludePath>
     <LibraryPath>E:\OPENGL_GLFW\Link from here\Libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -128,6 +128,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ComputeManager.cpp" />
     <ClCompile Include="src\InputManager.cpp" />
     <ClCompile Include="src\GUI.cpp" />
     <ClCompile Include="src\Qef.cpp" />
@@ -155,9 +156,10 @@
     <ClCompile Include="src\WorkerFunctions.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\ComputeManager.h" />
     <ClInclude Include="src\InputManager.h" />
     <ClInclude Include="src\GUI.h" />
-    <ClInclude Include="src\MeshInfo.h" />
+    <ClInclude Include="src\MeshData.h" />
     <ClInclude Include="src\Qef.h" />
     <ClInclude Include="src\DualContour.h" />
     <ClInclude Include="src\Mesh.h" />
@@ -179,10 +181,14 @@
     <ClInclude Include="src\VertexBuffer.h" />
     <ClInclude Include="src\VertexBufferLayout.h" />
     <ClInclude Include="src\TreeNode.h" />
+    <ClInclude Include="src\WorkData.h" />
     <ClInclude Include="src\WorkerFunctions.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="src\imgui\LICENCE.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\HelloWorld.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

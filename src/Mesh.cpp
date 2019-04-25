@@ -2,11 +2,11 @@
 
 
 
-Mesh::Mesh(MeshInfo info) {
+Mesh::Mesh(MeshData data) {
 	this->vertexBufferLayout.Push<float>(3, true);
 	
-	CreateVertexArray(info.vertices);
-	CreateIndexBuffer(info.indices);
+	CreateVertexArray(data.vertices);
+	CreateIndexBuffer(data.indices);
 }
 
 Mesh::~Mesh() {

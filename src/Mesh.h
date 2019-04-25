@@ -3,11 +3,11 @@
 
 #include "VertexArray.h"
 #include "IndexBuffer.h"
-#include "MeshInfo.h"
+#include "MeshData.h"
 
 class Mesh {
 public:
-	Mesh(MeshInfo info);
+	Mesh(MeshData info);
 	~Mesh();
 
 
