@@ -1,13 +1,16 @@
 #include "ComputeManager.h"
 
 
+#define RANGE 64
+#define CUBECOUNT (RANGE*2)*(RANGE*2)*(RANGE*2)
 
 ComputeManager::ComputeManager() {
 
 	cl_device_id deviceID;
 	cl_context context;
 	cl_command_queue queue;
-	cl_mem memObj;
+	cl_mem workDataArray;
+	cl_int nodeCount = CUBECOUNT ;
 	cl_program program;
 	cl_kernel kernel;
 	cl_platform_id platformID;
@@ -16,7 +19,7 @@ ComputeManager::ComputeManager() {
 	cl_int returnCode;
 
 	FILE* inputFile;
-	char fileName[] = "src/HelloWorld.cl";
+	char fileName[] = "src/KernelFile.cl";
 	char* src;
 	size_t srcSize;
 
@@ -39,7 +42,12 @@ ComputeManager::ComputeManager() {
 	//Get available GPU devices.
 	returnCode = clGetDeviceIDs(platformID, CL_DEVICE_TYPE_GPU, 1, &deviceID, &deviceCount);
 
+	//Get max local work size.
+	size_t maxWorkGroupSize[3];
+	returnCode = clGetDeviceInfo(deviceID, CL_DEVICE_MAX_WORK_ITEM_SIZES,sizeof(size_t)*3,maxWorkGroupSize,NULL);
+
 	//Print debug info.
+	printf("Local work size: [%d, %d, %d]\n", maxWorkGroupSize[0], maxWorkGroupSize[1], maxWorkGroupSize[2]);
 	printf("Platform ID: %ld\n", (int)platformID);
 	printf("Return Code: %s\n", (int)returnCode);
 	printf("Platform Count: %u\n", (int)platformCount);
@@ -54,8 +62,7 @@ ComputeManager::ComputeManager() {
 	queue = clCreateCommandQueueWithProperties(context, deviceID, NULL, &returnCode);
 
 	//Create memory buffer on the device.
-	memObj = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, 256 * sizeof(WorkData), NULL, &returnCode);
-	//memObj = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, 16 * sizeof(char), NULL, &returnCode);
+	workDataArray = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, CUBECOUNT * sizeof(WorkData), NULL, &returnCode);
 
 	//Create program from source,then build it.
 	program = clCreateProgramWithSource(context, 1, (const char **)&src, (const size_t *)&srcSize, &returnCode);
@@ -66,36 +73,48 @@ ComputeManager::ComputeManager() {
 	//kernel = clCreateKernel(program, "HelloWorld", &returnCode);
 
 	//Set kernel parameters.
-	returnCode = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&memObj);
-	cl_int nodeCount = 256;
+	returnCode = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&workDataArray);
 	returnCode = clSetKernelArg(kernel, 1, sizeof(cl_int),&nodeCount);
 
+	//Define work sizes.
+	const size_t globalWorkSize = CUBECOUNT;
+	const size_t localWorkSize = maxWorkGroupSize[0];
 	//Execute OpenCL kernel.
-	const size_t globalWorkSize = 256;
-	const size_t localWorkSize = 256;
 	returnCode = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &globalWorkSize, &localWorkSize, 0, NULL, NULL);
 	std::cout << returnCode << std::endl;
 
+	//Kernel executes on the GPU...
+		
 	//Copy results from the device memory to host memory.
-	WorkData workData[256];
-	returnCode = clEnqueueReadBuffer(queue, memObj, CL_TRUE, 0, 256 * sizeof(WorkData), workData, 0, NULL, NULL);
+	WorkData* workData = (WorkData*)malloc(globalWorkSize*sizeof(WorkData));
+	returnCode = clEnqueueReadBuffer(queue, workDataArray, CL_TRUE, 0, globalWorkSize * sizeof(WorkData),workData, 0, NULL, NULL);
 
 	//Print to evaluate.
-	for (int i = 0; i < 256; i++) {
+	/*
+	for (int i = 0; i < globalWorkSize; i++) {
 		std::cout << "Workdata [" << i << "]  used: ";
 		if (workData[i].used == 0) {
-			std::cout << "False\n";
+			std::cout << "False";
 		}else if(workData[i].used == 1) {
-			std::cout << "True\n";
+			std::cout << "True";
 		}
+
+		std::cout << " | " << (int)workData[i].edgeHasSignChange << " | ";
+		for (int j = 0; j < 8; j++) {
+			std::cout << workData[i].cornerValues[j] <<  " ";
+		}
+		std::cout << std::endl;
+
 	}
+	*/
+	std::cout << "Done." << std::endl;
 
 	//Cleanup.
 	returnCode = clFlush(queue);
 	returnCode = clFinish(queue);
 	returnCode = clReleaseKernel(kernel);
 	returnCode = clReleaseProgram(program);
-	returnCode = clReleaseMemObject(memObj);
+	returnCode = clReleaseMemObject(workDataArray);
 	returnCode = clReleaseCommandQueue(queue);
 	returnCode = clReleaseContext(context);
 

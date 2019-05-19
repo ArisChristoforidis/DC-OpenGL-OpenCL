@@ -1,7 +1,7 @@
 #include "ShapeFunctions.h"
 
 float CircleFunction(float x, float y, float z) {
-	return 15.0f - sqrt(x * x + y * y + z * z);
+	return 16.0f - sqrt(x * x + y * y + z * z);
 }
 
 float TorusFunction(float x, float y, float z) {

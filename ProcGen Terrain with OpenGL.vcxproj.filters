@@ -181,6 +181,6 @@
     <Text Include="src\imgui\LICENCE.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\HelloWorld.cl" />
+    <None Include="src\KernelFile.cl" />
   </ItemGroup>
 </Project>

@@ -55,7 +55,7 @@ void ShowGUIWindow(int vertexCount, int indiceCount, float deltaTime) {
 
 	//GUI layout.
 	bool show = true;
-	ImGui::Begin("Stats", &show); {
+	ImGui::Begin("Diagnostics", &show); {
 		ImGui::Text("Framerate: %.3f (%.4f sec)", 1 / deltaTime, deltaTime);
 		ImGui::Text("Vertices: %d", vertexCount);
 		ImGui::Text("Triangles: %d", indiceCount);

@@ -6,6 +6,7 @@
 #include "VertexArray.h"
 #include "IndexBuffer.h"
 #include "Shader.h"
+#include "Mesh.h"
 
 class Renderer {
 public:
@@ -14,5 +15,6 @@ public:
 
 	void ClearScreen() const;
 	void Draw(VertexArray &vertexArray,IndexBuffer &indexBuffer,Shader &shader) const;
+	void Draw(Mesh &mesh, Shader &shader) const;
 };
 #endif

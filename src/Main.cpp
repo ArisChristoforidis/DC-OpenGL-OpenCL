@@ -105,8 +105,7 @@ int main() {
 	glm::mat4 model = glm::mat4(1.0f);
 
 	//First parameter is essentially the FOV.
-	glm::mat4 projection = glm::mat4(1.0f);
-	projection = glm::perspective(glm::radians(60.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.01f, 1000.0f);
+	 glm::mat4 projection = glm::perspective(glm::radians(60.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.01f, 1000.0f);
 
 	glm::mat4 transform = glm::mat4(1.0f);
 
@@ -143,8 +142,8 @@ int main() {
 
 		//Render meshes.
 		for (int i = 0; i < objects.size();i++) {
-			renderer.Draw(objects[i].GetVertexArray(), objects[i].GetIndexBuffer(), customShader);
-			
+			//renderer.Draw(objects[i].GetVertexArray(), objects[i].GetIndexBuffer(), customShader);
+			renderer.Draw(objects[i], customShader);
 			//Count total vertices and indices on the side.
 			totalVertexCount += objects[i].GetVertexCount();
 			totalIndexCount += objects[i].GetIndexCount();

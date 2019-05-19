@@ -17,7 +17,7 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch) {
 	this->pitch = pitch;
 
 	this->front = glm::vec3(0.0f,0.0f,-1.0f);
-	this->movementSpeed = SPEED;
+	this->movementSpeed = SPEED*0.1f;
 	this->mouseSensitivity = SENSITIVITY;
 
 	UpdateCamera();

@@ -10,6 +10,7 @@ struct VertexBufferElement{
 	unsigned int isNormalized;
 
 	static unsigned int GetSizeOfType(){
+		//Size of float.
 		return 4;
 	}
 };
@@ -27,7 +28,8 @@ public:
 	template<>
 	void Push<float>(unsigned int count, unsigned int isNormalized){
 		elements.push_back({GL_FLOAT,count,isNormalized});
-		stride += count * VertexBufferElement::GetSizeOfType();
+		//sizeof(float) = 4.
+		stride += count * 4;
 	}
 
 	template<>
