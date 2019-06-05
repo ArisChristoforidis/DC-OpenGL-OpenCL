@@ -5,10 +5,9 @@
 
 typedef struct /*__attribute__ ((packed))*/ WorkData {
 	cl_uint index;
-	cl_uchar edgeHasSignChange; 
+	cl_uchar cornerValues; 
 	cl_char used;
 	cl_float x, y, z;
-	cl_float cornerValues[8];
 };
 /*
 typedef __attribute__ ((packed)) struct

@@ -35,7 +35,6 @@
 #include "WorkerFunctions.h"
 #include "GUI.h"
 
-int main();
 
 //Function prototypes.
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -43,7 +42,6 @@ void MouseInputWrapper(GLFWwindow* window, double xPos, double yPos);
 void ToggleWireframeMode();
 void UpdateShaderVariables(Shader* shader,glm::mat4 model,glm::mat4 view,glm::mat4 projection);
 double CalculateDeltaTime(double* pFrame);
-
 //Window size.
 #define WINDOW_WIDTH 1920
 #define WINDOW_HEIGHT 1080
@@ -97,7 +95,9 @@ int main() {
 
 	//Work(objects,objectCount);
 	MeshData data;
-	std::thread workerThread(Work, std::ref(data),std::ref(updateObjectList));
+	//std::thread workerThread(Work, std::ref(data),std::ref(updateObjectList));
+
+	std::thread workerThread(ComputeManager::Work, std::ref(data), std::ref(updateObjectList));
 
 	Shader customShader("src/shaders/vshader.vs", "src/shaders/fshader.fs");
 
@@ -115,7 +115,6 @@ int main() {
 
 	InitializeImGui(window,WINDOW_WIDTH,WINDOW_HEIGHT);
 
-	ComputeManager manager;
 
 	while (!glfwWindowShouldClose(window)) {
 		//Calculate deltaTime.
@@ -136,7 +135,7 @@ int main() {
 
 		//Clear the screen.
 		renderer.ClearScreen();
-
+		
 		unsigned int totalVertexCount = 0;
 		unsigned int totalIndexCount = 0;
 
@@ -157,6 +156,9 @@ int main() {
 		glfwSwapBuffers(window);
 		//Poll events.
 		glfwPollEvents();
+
+		
+
 	}
 
 	ImGui_ImplOpenGL3_Shutdown();
@@ -194,11 +196,14 @@ double CalculateDeltaTime(double* pFrame) {
 void MouseInputWrapper(GLFWwindow* window, double xPos, double yPos) {
 	/*I cannot pass member functions as a callback to glfwSetCursorPosCallback
 	so I have to call ProcessMouseInput this way.*/
-	inputManager->ProcessMouseInput(xPos, yPos);
+		inputManager->ProcessMouseInput(xPos, yPos);
 }
+
 
 void UpdateShaderVariables(Shader* shader,glm::mat4 model, glm::mat4 view, glm::mat4 projection) {
 	shader->setMat4("model", model);
 	shader->setMat4("view", view);
 	shader->setMat4("projection", projection);
 }
+
+

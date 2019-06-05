@@ -6,8 +6,10 @@
 #include <stdlib.h>
 #include <vector>
 #include <fstream>
+#include <chrono>
 
 #include "CL/cl.h"
+#include "omp.h"
 
 #include "MeshData.h"
 #include "ShapeFunctions.h"

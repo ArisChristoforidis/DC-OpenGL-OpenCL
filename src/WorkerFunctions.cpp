@@ -3,7 +3,7 @@
 
 void Work(MeshData &data, bool &updateObjects) {
 	DualContour dualContour;
-	dualContour.ExtractSurface(CircleFunction);
+	dualContour.ExtractSurface(TorusFunction);
 
 
 
